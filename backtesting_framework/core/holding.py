@@ -1,29 +1,30 @@
 # backtesting_framework/core/holding.py
+# backtesting_framework/核心/持仓.py
 
 class Holding:
     """
-    Represents a holding of a specific security in the portfolio.
+    表示投资组合中特定证券的持仓。
     """
     def __init__(self, security_ticker: str, initial_quantity: float = 0, initial_avg_cost: float = 0.0):
         """
-        Initializes a Holding object.
+        初始化一个Holding对象。
 
-        Args:
-            security_ticker (str): The ticker symbol of the security.
-            initial_quantity (float, optional): The initial quantity held. Defaults to 0.
-            initial_avg_cost (float, optional): The initial average cost of the holding. Defaults to 0.0.
+        参数:
+            security_ticker (str): 证券的代码。
+            initial_quantity (float, optional): 初始持有的数量。默认为0。
+            initial_avg_cost (float, optional): 持仓的初始平均成本。默认为0.0。
         """
         if not isinstance(security_ticker, str) or not security_ticker:
-            raise ValueError("Security ticker must be a non-empty string.")
+            raise ValueError("证券代码必须是一个非空字符串。")
         if not isinstance(initial_quantity, (int, float)) or initial_quantity < 0:
-            raise ValueError("Initial quantity must be a non-negative number.")
+            raise ValueError("初始数量必须是一个非负数。")
         if not isinstance(initial_avg_cost, (int, float)) or initial_avg_cost < 0:
-            raise ValueError("Initial average cost must be a non-negative number.")
+            raise ValueError("初始平均成本必须是一个非负数。")
 
         self.security_ticker = security_ticker
         self.quantity = float(initial_quantity)
         self.average_cost = float(initial_avg_cost)
-        self.last_price = float(initial_avg_cost) # Initialize last_price, will be updated by market data
+        self.last_price = float(initial_avg_cost) # 初始化最后价格，将由市场数据更新
         self.market_value = self.quantity * self.last_price
 
     def __repr__(self):
@@ -33,72 +34,74 @@ class Holding:
 
     def update_last_price(self, current_price: float):
         """
-        Updates the last known price for this holding and recalculates market value.
+        更新此持仓的最后已知价格并重新计算市值。
 
-        Args:
-            current_price (float): The current market price of the security.
+        参数:
+            current_price (float): 证券的当前市场价格。
         
-        Raises:
-            ValueError: If the current price is negative.
+        引发:
+            ValueError: 如果当前价格为负。
         """
         if not isinstance(current_price, (int, float)) or current_price < 0:
-            raise ValueError("Current price must be a non-negative number.")
+            raise ValueError("当前价格必须是一个非负数。")
         self.last_price = float(current_price)
         self.market_value = self.quantity * self.last_price
 
     def add_shares(self, quantity_to_add: float, price: float):
         """
-        Adds shares to the holding, updating quantity and average cost.
+        向持仓中添加股份，更新数量和平均成本。
 
-        Args:
-            quantity_to_add (float): The number of shares to add. Must be positive.
-            price (float): The price at which the shares were acquired. Must be non-negative.
+        参数:
+            quantity_to_add (float): 要添加的股份数量。必须为正。
+            price (float):购入股份的价格。必须为非负。
 
-        Raises:
-            ValueError: If quantity_to_add is not positive or price is negative.
+        引发:
+            ValueError: 如果要添加的数量不是正数或价格为负。
         """
         if not isinstance(quantity_to_add, (int, float)) or quantity_to_add <= 0:
-            raise ValueError("Quantity to add must be positive.")
+            raise ValueError("要添加的数量必须为正。")
         if not isinstance(price, (int, float)) or price < 0:
-            raise ValueError("Price must be a non-negative number.")
+            raise ValueError("价格必须是一个非负数。")
 
         new_total_cost = (self.average_cost * self.quantity) + (price * quantity_to_add)
         self.quantity += quantity_to_add
-        if self.quantity > 0: # Avoid division by zero if quantity was 0 and shares are added
+        if self.quantity > 0: # 如果数量为0并添加了股份，则避免除以零
             self.average_cost = new_total_cost / self.quantity
-        else: # Should not happen if quantity_to_add is positive
+        else: # 如果quantity_to_add是正数，则不应发生这种情况
             self.average_cost = 0 
-        self.update_last_price(price) # Update last price to the transaction price and recalculate market value
+        self.update_last_price(price) # 将最后价格更新为交易价格并重新计算市值
 
     def remove_shares(self, quantity_to_remove: float):
         """
-        Removes shares from the holding, updating quantity. Average cost remains unchanged.
+        从持仓中移除股份，更新数量。平均成本保持不变。
 
-        Args:
-            quantity_to_remove (float): The number of shares to remove. Must be positive.
+        参数:
+            quantity_to_remove (float): 要移除的股份数量。必须为正。
 
-        Returns:
-            float: The cost basis of the shares removed (quantity_to_remove * self.average_cost).
+        返回:
+            float: 移除股份的成本基础 (quantity_to_remove * self.average_cost)。
 
-        Raises:
-            ValueError: If quantity_to_remove is not positive or exceeds current quantity.
+        引发:
+            ValueError: 如果要移除的数量不是正数或超过当前数量。
         """
         if not isinstance(quantity_to_remove, (int, float)) or quantity_to_remove <= 0:
-            raise ValueError("Quantity to remove must be positive.")
+            raise ValueError("要移除的数量必须为正。")
         if quantity_to_remove > self.quantity:
-            raise ValueError(f"Cannot remove {quantity_to_remove} shares. "
-                             f"Only {self.quantity} shares of {self.security_ticker} are held.")
+            raise ValueError(f"无法移除 {quantity_to_remove} 股。"
+                             f"当前仅持有 {self.quantity} 股 {self.security_ticker}。")
 
         cost_basis_of_removed_shares = quantity_to_remove * self.average_cost
         self.quantity -= quantity_to_remove
         
-        # Market value needs to be updated based on the new quantity and last known price.
-        # The last_price itself doesn't change here, only when market data updates it.
+        # 市值需要根据新的数量和最后已知价格进行更新。
+        # last_price本身在此处不会更改，仅当市场数据更新它时才会更改。
         self.market_value = self.quantity * self.last_price
         
         if self.quantity == 0:
-            self.average_cost = 0.0 # Reset average cost if no shares are left
+            self.average_cost = 0.0 # 如果没有剩余股份，则重置平均成本
 
         return cost_basis_of_removed_shares
 
 ```
+
+[end of backtesting_framework/core/holding.py]

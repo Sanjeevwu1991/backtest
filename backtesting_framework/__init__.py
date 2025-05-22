@@ -1,18 +1,23 @@
 # backtesting_framework/__init__.py
+# backtesting_framework/__init__.py
 
-from .core import * # Import all from core
-from .strategy import * # Import all from strategy
-from .execution import * # Import all from execution
-# from .data import * # Will be added when data_handler is defined
+from .core import * # 从core导入所有
+from .strategy import * # 从strategy导入所有
+from .execution import * # 从execution导入所有
+# from .data import * # 定义data_handler后将添加
 from .backtester import Backtester
 
 __all__ = [
-    # Spread out from core, strategy, execution
+    # 从core, strategy, execution中展开
     "Security", "Transaction", "TransactionType", "Holding", "Portfolio",
     "Event", "EventType", "MarketEvent", "SignalEvent", "OrderEvent", "FillEvent", "DividendEvent",
     "EventQueue",
-    "Strategy", "BuyAndHoldStrategy", # Example strategy
+    "Strategy", "BuyAndHoldStrategy", # 示例策略
     "BaseExecutionHandler", "SimpleExecutionHandler",
     "Backtester",
-    # DataHandler components will be added here later
+    # DataHandler 组件稍后将在此处添加
 ]
+
+```
+
+[end of backtesting_framework/__init__.py]

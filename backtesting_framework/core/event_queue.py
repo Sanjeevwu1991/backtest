@@ -1,13 +1,14 @@
 # backtesting_framework/core/event_queue.py
+# backtesting_framework/核心/事件队列.py
 
 import collections
 from typing import Optional
-from .event import Event # Assuming Event class is in event.py in the same directory
+from .event import Event # 假设Event类在同一目录下的event.py中
 
 class EventQueue:
     """
-    A simple event queue using collections.deque to store and manage events.
-    Events are processed in FIFO order.
+    一个简单的事件队列，使用collections.deque来存储和管理事件。
+    事件按先进先出（FIFO）的顺序处理。
     """
     def __init__(self):
         self._queue = collections.deque()
@@ -17,20 +18,20 @@ class EventQueue:
 
     def put_event(self, event: Event):
         """
-        Adds an event to the end of the queue.
+        将事件添加到队列的末尾。
 
-        Args:
-            event (Event): The event to be added.
+        参数:
+            event (Event): 要添加的事件。
         """
         if not isinstance(event, Event):
-            # Or log a warning, or handle more gracefully depending on strictness
-            raise ValueError("Only Event objects can be added to the EventQueue.")
+            # 或者记录警告，或者根据严格程度更优雅地处理
+            raise ValueError("只有Event对象才能添加到EventQueue中。")
         self._queue.append(event)
 
     def get_event(self) -> Optional[Event]:
         """
-        Removes and returns an event from the front of the queue.
-        Returns None if the queue is empty.
+        从队列的前端移除并返回一个事件。
+        如果队列为空，则返回None。
         """
         if not self._queue:
             return None
@@ -38,55 +39,57 @@ class EventQueue:
 
     def is_empty(self) -> bool:
         """
-        Checks if the event queue is empty.
+        检查事件队列是否为空。
 
-        Returns:
-            bool: True if the queue is empty, False otherwise.
+        返回:
+            bool: 如果队列为空则为True，否则为False。
         """
         return len(self._queue) == 0
     
     @property
     def size(self) -> int:
         """
-        Returns the current number of events in the queue.
+        返回队列中当前的事件数量。
         """
         return len(self._queue)
 
-# Example Usage (for testing purposes)
+# 示例用法（用于测试目的）
 if __name__ == '__main__':
-    from .event import MarketEvent, EventType # Assuming EventType is also in event.py
+    from .event import MarketEvent, EventType # 假设EventType也在event.py中
     from datetime import datetime
 
-    # Create an event queue
+    # 创建一个事件队列
     eq = EventQueue()
-    print(f"Initial queue: {eq}, Empty: {eq.is_empty()}, Size: {eq.size}")
+    print(f"初始队列: {eq}, 是否为空: {eq.is_empty()}, 大小: {eq.size}")
 
-    # Create some dummy events
+    # 创建一些虚拟事件
     event1 = MarketEvent(timestamp=datetime.now(), security_ticker="AAPL", new_price=150.0)
     event2 = MarketEvent(timestamp=datetime.now(), security_ticker="GOOG", new_price=2500.0)
 
-    # Put events into the queue
+    # 将事件放入队列
     eq.put_event(event1)
     eq.put_event(event2)
-    print(f"Queue after adding events: {eq}, Empty: {eq.is_empty()}, Size: {eq.size}")
+    print(f"添加事件后的队列: {eq}, 是否为空: {eq.is_empty()}, 大小: {eq.size}")
 
-    # Get events from the queue
+    # 从队列中获取事件
     retrieved_event1 = eq.get_event()
-    print(f"Retrieved event 1: {retrieved_event1}")
-    print(f"Queue after getting one event: {eq}, Size: {eq.size}")
+    print(f"取出的事件1: {retrieved_event1}")
+    print(f"取出一个事件后的队列: {eq}, 大小: {eq.size}")
 
     retrieved_event2 = eq.get_event()
-    print(f"Retrieved event 2: {retrieved_event2}")
-    print(f"Queue after getting second event: {eq}, Empty: {eq.is_empty()}, Size: {eq.size}")
+    print(f"取出的事件2: {retrieved_event2}")
+    print(f"取出第二个事件后的队列: {eq}, 是否为空: {eq.is_empty()}, 大小: {eq.size}")
 
-    # Try to get from empty queue
+    # 尝试从空队列中获取
     empty_event = eq.get_event()
-    print(f"Retrieved from empty queue: {empty_event}")
-    print(f"Final queue state: {eq}, Empty: {eq.is_empty()}, Size: {eq.size}")
+    print(f"从空队列中取出的事件: {empty_event}")
+    print(f"最终队列状态: {eq}, 是否为空: {eq.is_empty()}, 大小: {eq.size}")
 
-    # Test adding non-Event type (should raise ValueError)
+    # 测试添加非Event类型（应引发ValueError）
     try:
-        eq.put_event("not an event")
+        eq.put_event("不是一个事件")
     except ValueError as e:
-        print(f"Caught expected error: {e}")
+        print(f"捕获到预期错误: {e}")
 ```
+
+[end of backtesting_framework/core/event_queue.py]

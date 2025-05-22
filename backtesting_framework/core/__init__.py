@@ -1,4 +1,5 @@
 # backtesting_framework/core/__init__.py
+# backtesting_framework/核心/__init__.py
 
 from .security import Security
 from .transaction import Transaction, TransactionType
@@ -22,3 +23,7 @@ __all__ = [
     "DividendEvent",
     "EventQueue",
 ]
+
+```
+
+[end of backtesting_framework/core/__init__.py]

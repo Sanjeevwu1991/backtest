@@ -1,4 +1,5 @@
 # backtesting_framework/core/portfolio.py
+# backtesting_framework/核心/投资组合.py
 
 from datetime import datetime
 from typing import Dict, List, Optional
@@ -7,28 +8,27 @@ from .transaction import Transaction, TransactionType
 
 class Portfolio:
     """
-    Manages the state of a trading portfolio, including cash, holdings,
-    and transaction history.
+    管理交易投资组合的状态，包括现金、持仓和交易历史。
     """
     def __init__(self, initial_cash: float = 100000.0, start_date: Optional[datetime] = None):
         """
-        Initializes the Portfolio.
+        初始化投资组合。
 
-        Args:
-            initial_cash (float, optional): The starting cash balance. Defaults to 100000.0.
-            start_date (Optional[datetime], optional): The official start date of the portfolio.
-                                                     Defaults to current datetime if None.
+        参数:
+            initial_cash (float, optional): 初始现金余额。默认为 100000.0。
+            start_date (Optional[datetime], optional): 投资组合的正式开始日期。
+                                                     如果为None，则默认为当前日期时间。
         """
         if not isinstance(initial_cash, (int, float)) or initial_cash < 0:
-            raise ValueError("Initial cash must be a non-negative number.")
+            raise ValueError("初始现金必须是非负数。")
 
         self.start_date = start_date if start_date else datetime.now()
         self.current_cash = float(initial_cash)
-        self.holdings: Dict[str, Holding] = {} # Ticker -> Holding object
+        self.holdings: Dict[str, Holding] = {} # 股票代码 -> Holding 对象
         self.transactions_history: List[Transaction] = []
         
-        # To store snapshots of portfolio value and composition over time
-        # Each record could be a dictionary or a custom object
+        # 用于存储投资组合价值和组成随时间变化的快照
+        # 每条记录可以是一个字典或自定义对象
         self.daily_records: List[Dict] = []
         self.current_datetime: Optional[datetime] = self.start_date
 
@@ -40,65 +40,65 @@ class Portfolio:
 
     def update_datetime(self, new_datetime: datetime):
         """
-        Updates the portfolio's internal current datetime.
-        This is crucial for timestamping transactions and records correctly.
+        更新投资组合内部的当前日期时间。
+        这对于正确地为交易和记录添加时间戳至关重要。
         """
         if not isinstance(new_datetime, datetime):
-            raise ValueError("New datetime must be a datetime object.")
+            raise ValueError("新的日期时间必须是datetime对象。")
         self.current_datetime = new_datetime
 
     def add_cash(self, amount: float):
-        """Adds cash to the portfolio."""
+        """向投资组合中添加现金。"""
         if not isinstance(amount, (int, float)) or amount < 0:
-            raise ValueError("Amount to add must be a non-negative number.")
+            raise ValueError("要添加的金额必须是非负数。")
         self.current_cash += amount
 
     def remove_cash(self, amount: float):
-        """Removes cash from the portfolio. Raises ValueError if insufficient cash."""
+        """从投资组合中移除现金。如果现金不足则引发ValueError。"""
         if not isinstance(amount, (int, float)) or amount < 0:
-            raise ValueError("Amount to remove must be a non-negative number.")
+            raise ValueError("要移除的金额必须是非负数。")
         if amount > self.current_cash:
-            raise ValueError(f"Cannot remove {amount:.2f}: insufficient cash. Available: {self.current_cash:.2f}")
+            raise ValueError(f"无法移除 {amount:.2f}: 现金不足。可用现金: {self.current_cash:.2f}")
         self.current_cash -= amount
 
     def get_total_holdings_value(self) -> float:
-        """Calculates the total market value of all current holdings."""
+        """计算当前所有持仓的总市值。"""
         return sum(holding.market_value for holding in self.holdings.values())
 
     def get_net_value(self) -> float:
-        """Calculates the total net asset value (NAV) of the portfolio (holdings + cash)."""
+        """计算投资组合的总净资产值 (NAV) (持仓 + 现金)。"""
         return self.get_total_holdings_value() + self.current_cash
 
     def update_holding_price(self, security_ticker: str, new_price: float):
         """
-        Updates the price of a specific holding.
-        If the holding doesn't exist, this method does nothing (as portfolio
-        should only track securities it has interacted with or holds).
+        更新特定持仓的价格。
+        如果持仓不存在，此方法不执行任何操作（因为投资组合
+        应仅跟踪其已交互或持有的证券）。
         """
         if security_ticker in self.holdings:
             self.holdings[security_ticker].update_last_price(new_price)
-        # If not in holdings, it means we don't own it, so its price change
-        # doesn't directly affect our holdings' market value calculation,
-        # though it's important for general market data.
+        # 如果不在持仓中，意味着我们不拥有它，所以其价格变动
+        # 不直接影响我们持仓的市值计算，
+        # 尽管它对于一般市场数据很重要。
 
     def _add_transaction_to_history(self, transaction: Transaction):
-        """Appends a transaction to the history."""
+        """将交易附加到历史记录中。"""
         self.transactions_history.append(transaction)
 
     def execute_transaction(self, transaction: Transaction):
         """
-        Processes a transaction (buy or sell), updating holdings and cash.
-        This method assumes the transaction is valid and has already occurred (a FillEvent).
+        处理交易（买入或卖出），更新持仓和现金。
+        此方法假定交易有效且已发生（一个FillEvent）。
 
-        Args:
-            transaction (Transaction): The transaction to process.
+        参数:
+            transaction (Transaction): 要处理的交易。
         """
         if not isinstance(transaction, Transaction):
-            raise ValueError("Invalid transaction object provided.")
+            raise ValueError("提供了无效的交易对象。")
         
         ticker = transaction.security_ticker
         
-        # Deduct commission first, regardless of transaction type
+        # 无论交易类型如何，首先扣除佣金
         self.remove_cash(transaction.commission)
 
         if transaction.transaction_type == TransactionType.BUY:
@@ -109,37 +109,37 @@ class Portfolio:
                 self.holdings[ticker] = Holding(security_ticker=ticker)
             
             self.holdings[ticker].add_shares(transaction.quantity, transaction.price)
-            # The add_shares method in Holding already updates its own last_price and market_value
+            # Holding中的add_shares方法已经更新了其自身的last_price和market_value
 
         elif transaction.transaction_type == TransactionType.SELL:
             proceeds_from_sale = transaction.quantity * transaction.price
             self.add_cash(proceeds_from_sale)
 
             if ticker not in self.holdings:
-                # This should ideally not happen if logic is correct,
-                # as we can't sell what we don't have (unless shorting, not supported yet)
-                raise ValueError(f"Attempted to sell {ticker} but not in holdings.")
+                # 如果逻辑正确，理想情况下不应发生这种情况，
+                # 因为我们不能卖出我们没有的东西（除非做空，目前不支持）
+                raise ValueError(f"试图卖出 {ticker} 但不在持仓中。")
             
-            # remove_shares updates quantity and market_value, and returns cost_basis
-            # which could be used for P&L calculation if needed here.
+            # remove_shares 更新数量和市值，并返回成本基础
+            # 如果此处需要，可用于计算盈亏。
             self.holdings[ticker].remove_shares(transaction.quantity)
 
-            # If quantity of a holding becomes zero, remove it from the holdings dict
+            # 如果持仓数量变为零，则从持仓字典中删除它
             if self.holdings[ticker].quantity == 0:
                 del self.holdings[ticker]
         else:
-            raise ValueError(f"Unknown transaction type: {transaction.transaction_type}")
+            raise ValueError(f"未知的交易类型: {transaction.transaction_type}")
 
         self._add_transaction_to_history(transaction)
-        # print(f"Executed: {transaction}, Cash: {self.current_cash:.2f}") # For debugging
+        # print(f"已执行: {transaction}, 现金: {self.current_cash:.2f}") # 用于调试
 
     def record_daily_snapshot(self, timestamp: datetime):
         """
-        Records a snapshot of the portfolio's state.
-        This should be called typically at the end of each trading day.
+        记录投资组合状态的快照。
+        通常应在每个交易日结束时调用此方法。
         """
         if not isinstance(timestamp, datetime):
-            raise ValueError("Timestamp must be a datetime object.")
+            raise ValueError("时间戳必须是datetime对象。")
 
         current_holdings_snapshot = {
             ticker: {
@@ -157,27 +157,27 @@ class Portfolio:
             "cash": self.current_cash,
             "holdings_value": self.get_total_holdings_value(),
             "holdings_detail": current_holdings_snapshot,
-            # "transactions_today": [] # This would require more logic to filter
+            # "transactions_today": [] # 这需要更多逻辑来筛选
         }
         self.daily_records.append(snapshot)
-        # print(f"Snapshot @ {timestamp.strftime('%Y-%m-%d')}: NAV {snapshot['net_value']:.2f}")
+        # print(f"快照 @ {timestamp.strftime('%Y-%m-%d')}: NAV {snapshot['net_value']:.2f}")
 
-# Example Usage (for testing purposes, will be removed or moved to a test file)
+# 示例用法（用于测试目的，将被移除或移至测试文件）
 if __name__ == '__main__':
-    # Create a portfolio
+    # 创建一个投资组合
     portfolio = Portfolio(initial_cash=100000.0, start_date=datetime(2023, 1, 1, 9, 30))
     print(portfolio)
 
-    # Simulate a market update for a stock we might buy
-    # In a real backtest, this would come from MarketEvents
-    # For now, let's assume AAPL is at $150
-    # portfolio.update_holding_price("AAPL", 150.0) # No effect if not holding
+    # 模拟我们可能购买的股票的市场更新
+    # 在真实的回测中，这将来自MarketEvents
+    # 现在，我们假设AAPL的价格是$150
+    # portfolio.update_holding_price("AAPL", 150.0) # 如果不持有则无效
 
-    # Simulate a BUY transaction
+    # 模拟一个买入交易
     buy_time = datetime(2023, 1, 1, 10, 0, 0)
-    portfolio.update_datetime(buy_time) # Update portfolio time
+    portfolio.update_datetime(buy_time) # 更新投资组合时间
 
-    # Assume a FillEvent resulted in this transaction
+    # 假设一个FillEvent导致了此交易
     buy_transaction = Transaction(
         timestamp=buy_time,
         security_ticker="AAPL",
@@ -187,21 +187,21 @@ if __name__ == '__main__':
         commission=5.0
     )
     portfolio.execute_transaction(buy_transaction)
-    print(f"After BUY AAPL: Cash {portfolio.current_cash:.2f}, Holdings: {portfolio.holdings}")
-    print(f"NAV: {portfolio.get_net_value():.2f}")
+    print(f"买入 AAPL 后: 现金 {portfolio.current_cash:.2f}, 持仓: {portfolio.holdings}")
+    print(f"净资产值: {portfolio.get_net_value():.2f}")
 
 
-    # Simulate market price change for AAPL
+    # 模拟AAPL的市场价格变动
     price_update_time = datetime(2023, 1, 1, 15, 30, 0)
     portfolio.update_datetime(price_update_time)
     portfolio.update_holding_price("AAPL", 152.0)
-    print(f"After AAPL price update: Holdings: {portfolio.holdings['AAPL']}")
-    print(f"NAV: {portfolio.get_net_value():.2f}")
+    print(f"AAPL 价格更新后: 持仓: {portfolio.holdings['AAPL']}")
+    print(f"净资产值: {portfolio.get_net_value():.2f}")
 
-    # Record end-of-day snapshot
+    # 记录日终快照
     portfolio.record_daily_snapshot(datetime(2023, 1, 1, 16, 0, 0))
 
-    # Simulate a SELL transaction on the next day
+    # 模拟第二天的卖出交易
     sell_time = datetime(2023, 1, 2, 11, 0, 0)
     portfolio.update_datetime(sell_time)
 
@@ -209,23 +209,25 @@ if __name__ == '__main__':
         timestamp=sell_time,
         security_ticker="AAPL",
         transaction_type=TransactionType.SELL,
-        quantity=5, # Selling 5 out of 10 shares
+        quantity=5, # 卖出10股中的5股
         price=155.0,
         commission=5.0
     )
     portfolio.execute_transaction(sell_transaction)
-    print(f"After SELL AAPL: Cash {portfolio.current_cash:.2f}, Holdings: {portfolio.holdings.get('AAPL')}")
-    print(f"NAV: {portfolio.get_net_value():.2f}")
+    print(f"卖出 AAPL 后: 现金 {portfolio.current_cash:.2f}, 持仓: {portfolio.holdings.get('AAPL')}")
+    print(f"净资产值: {portfolio.get_net_value():.2f}")
 
-    # Record another end-of-day snapshot
+    # 记录另一个日终快照
     portfolio.record_daily_snapshot(datetime(2023, 1, 2, 16, 0, 0))
     
-    print("\nDaily Records:")
+    print("\n每日记录:")
     for record in portfolio.daily_records:
         print(record)
     
-    print("\nTransaction History:")
+    print("\n交易历史:")
     for trans in portfolio.transactions_history:
         print(trans)
 
 ```
+
+[end of backtesting_framework/core/portfolio.py]
